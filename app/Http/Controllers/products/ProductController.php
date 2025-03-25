@@ -92,6 +92,7 @@ class ProductController extends Controller
 
     // **************************************LATEST PRODUCT FUNCTION***********************************//
     public function latestProducts(){
+
         $products = Product::orderBy('created_at','desc')->take(4)->get();
         if($products->isEmpty()){
             return response()->json(['success' => false, 'message' => 'latest product not found']);
