@@ -43,6 +43,7 @@ class AuthController extends Controller
        $user->password = Hash::make($request->password);
        $user->role = 'user'; 
        $user->country_id = $request->country;
+       $user->email_verified_at = null;
        $user->save();
        event(new Registered($user));
     //    Log::info('Registered event triggered for user', [
@@ -84,7 +85,13 @@ class AuthController extends Controller
            if(!Auth::attempt($credential)){
              return response()->json(['message' => 'Invalid login details'],401);
            }
+           
            $user = Auth::user();
+           if (!$user->email_verified_at) {
+                return response()->json([
+                    'message' => 'Email not verified. Please verify your email before logging in.'
+                ], 403);
+            }
            $token = $user->createToken('login_token')->plainTextToken;
            return response()->json(['message' => 'Login successfully','token' =>$token,'role' => $user->role,'userId' =>$user->id]);
     }
