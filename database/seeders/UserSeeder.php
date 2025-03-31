@@ -23,6 +23,7 @@ class UserSeeder extends Seeder
                 'city'    => 'india',
                 'password' => Hash::make('password'),
                 'role'     => 'admin',
+                'email_verified_at' => now()
             ],
             [
                 'first_name' => 'user',
@@ -32,7 +33,8 @@ class UserSeeder extends Seeder
                 'address' => 'mohali',
                 'city'    => 'india',
                 'password' => Hash::make('password'),
-                'role'     => 'user'
+                'role'     => 'user',
+                'email_verified_at' => now()
             ]
         ];
         foreach ($users as $userData) {

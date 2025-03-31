@@ -43,6 +43,7 @@ class AuthController extends Controller
        $user->password = Hash::make($request->password);
        $user->role = 'user'; 
        $user->country_id = $request->country;
+       $user->email_verified_at = null;
        $user->save();
        event(new Registered($user));
     //    Log::info('Registered event triggered for user', [
@@ -67,79 +68,85 @@ class AuthController extends Controller
     }
 
     //************************LOGIN FUNCTION*********************//
-    // public function login(Request $request)
-    // {
-    //     $validate = Validator::make($request->all(),[
-    //         'email' => 'required',
-    //         'password'  =>  'required',
-    //        ]);
-    //        if($validate->fails()){
-    //             return response()->json([
-    //                'success' => false,
-    //                'message' => 'validation error',
-    //                'error'  =>  $validate->errors(),
-    //             ],422);
-    //        };
-    //        $credential = $request->only('email','password');
-    //        if(!Auth::attempt($credential)){
-    //          return response()->json(['message' => 'Invalid login details'],401);
-    //        }
-    //        $user = Auth::user();
-    //        $token = $user->createToken('login_token')->plainTextToken;
-    //        return response()->json(['message' => 'Login successfully','token' =>$token,'role' => $user->role,'userId' =>$user->id]);
-    // }
-
     public function login(Request $request)
     {
-        // Get the Authorization header
-        $authHeader = $request->header('Authorization');
+        $validate = Validator::make($request->all(),[
+            'email' => 'required',
+            'password'  =>  'required',
+           ]);
+           if($validate->fails()){
+                return response()->json([
+                   'success' => false,
+                   'message' => 'validation error',
+                   'error'  =>  $validate->errors(),
+                ],422);
+           };
+           $credential = $request->only('email','password');
+           if(!Auth::attempt($credential)){
+             return response()->json(['message' => 'Invalid login details'],401);
+           }
+           
+           $user = Auth::user();
+           if (!$user->email_verified_at) {
+                return response()->json([
+                    'message' => 'Email not verified. Please verify your email before logging in.'
+                ], 403);
+            }
+           $token = $user->createToken('login_token')->plainTextToken;
+           return response()->json(['message' => 'Login successfully','token' =>$token,'role' => $user->role,'userId' =>$user->id]);
+    }
+
+    // public function login(Request $request)
+    // {
+    //     // Get the Authorization header
+    //     $authHeader = $request->header('Authorization');
    
 
-        if (!$authHeader || !str_starts_with($authHeader, 'Basic ')) {
-            return response()->json(['message' => 'Missing or invalid authorization header'], 401);
-        }
+    //     if (!$authHeader || !str_starts_with($authHeader, 'Basic ')) {
+    //         return response()->json(['message' => 'Missing or invalid authorization header'], 401);
+    //     }
 
-        // Extract and decode the Base64 credentials
-        $base64Credentials = substr($authHeader, 6);
-        $decodedCredentials = base64_decode($base64Credentials);
+    //     // Extract and decode the Base64 credentials
+    //     $base64Credentials = substr($authHeader, 6);
+    //     $decodedCredentials = base64_decode($base64Credentials);
 
-        if (!$decodedCredentials || !str_contains($decodedCredentials, ':')) {
-            return response()->json(['message' => 'Invalid credentials format'], 401);
-        }
+    //     if (!$decodedCredentials || !str_contains($decodedCredentials, ':')) {
+    //         return response()->json(['message' => 'Invalid credentials format'], 401);
+    //     }
 
-        // Split into email and password
-        list($email, $password) = explode(':', $decodedCredentials, 2);
+    //     // Split into email and password
+    //     list($email, $password) = explode(':', $decodedCredentials, 2);
 
-        // Validate credentials
-        $validate = Validator::make(['email' => $email, 'password' => $password], [
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
+    //     // Validate credentials
+    //     $validate = Validator::make(['email' => $email, 'password' => $password], [
+    //         'email' => 'required|email',
+    //         'password' => 'required',
+    //     ]);
 
-        if ($validate->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation error',
-                'error' => $validate->errors(),
-            ], 422);
-        }
+    //     if ($validate->fails()) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Validation error',
+    //             'error' => $validate->errors(),
+    //         ], 422);
+    //     }
 
-        // Attempt login
-        if (!Auth::attempt(['email' => $email, 'password' => $password])) {
-            return response()->json(['message' => 'Invalid login details'], 401);
-        }
+    //     // Attempt login
+    //     if (!Auth::attempt(['email' => $email, 'password' => $password])) {
+    //         return response()->json(['message' => 'Invalid login details'], 401);
+    //     }
 
-        // Get authenticated user
-        $user = Auth::user();
-        $token = $user->createToken('login_token')->plainTextToken;
+    //     // Get authenticated user
+    //     $user = Auth::user();
+    //     $token = $user->createToken('login_token')->plainTextToken;
 
-        return response()->json([
-            'message' => 'Login successful',
-            'token' => $token,
-            'role' => $user->role,
-            'userId' => $user->id,
-        ]);
-    }
+    //     return response()->json([
+    //         'message' => 'Login successful',
+    //         'token' => $token,
+    //         'role' => $user->role,
+    //         'userId' => $user->id,
+    //     ]);
+    // }
 
 
     //**********************LOGOUT FUNCTION********************//
